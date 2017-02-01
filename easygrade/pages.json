@@ -1,0 +1,39 @@
+{
+    "pages": [
+        {
+            "title": "Blackboard",
+            "iframe": false,
+            "xpath": "//*[@id=\"link_icon_197\"]",
+            "css_selector": ""
+        },
+
+        {
+            "title": "TAing Class Course Site",
+            "iframe": false,
+            "xpath": "//*[@id=\"_4_1termCourses_noterm\"]/ul[2]/li[2]/a",
+            "css_selector": ""
+        },
+
+        {
+            "title": "Grade Center Dropdown",
+            "iframe": false,
+            "xpath": "//*[@id=\"controlpanel.grade.center_groupExpanderLink\"]",
+            "css_selector": ""
+        },
+
+        {
+            "title": "Full Grade Center",
+            "iframe": false,
+            "xpath": "//*[@id=\"controlpanel.grade.center_groupContents\"]/li[2]/a",
+            "css_selector": ""
+        },
+        
+        {
+            "title": "Smart View Listing",
+            "iframe": false,
+            "xpath": "//*[@id=\"actionmenuitem.79198f4f-e962-412d-8702-290c23117e96.5\"]",
+            "css_selector": ""
+        }
+
+    ]
+}
