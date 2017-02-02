@@ -39,7 +39,7 @@ class EasyGradeBot(FSUBot):
         # get course_id from course_name
         for course_li in self.dr.find_elements_by_xpath(ta_courses_xpath):
             if str(course_name) == str(course_li.text):
-                course_id = int(course_li.get_attribute("href").split('id=')[1].split('&')[0])
+                course_id = course_li.get_attribute("href").split('id=')[1].split('&')[0]
                 break
         else:
             print("Unable to locate course. Ensure it exactly matches the text under \"Courses where you are: Teaching Assistant\".")
