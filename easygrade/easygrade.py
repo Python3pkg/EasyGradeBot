@@ -7,6 +7,11 @@ from urllib.parse import parse_qs, urlparse
 from lxml import html
 from fsubot import FSUBot
 
+try:
+    from config import fsuid, fsupw
+except ImportError:  # no config file set
+    pass
+
 
 def get_query_field(url, field):
     try:
@@ -85,7 +90,7 @@ class EasyGradeBot(FSUBot):
 
 
 if __name__ == '__main__':
-    bot = EasyGradeBot(fsuid='', fsupw='!', browser={'title':'chrome','path':'../../../../../../../../../../../../usr/local/bin/chromedriver'})
+    bot = EasyGradeBot(fsuid=fsuid, fsupw=fsupw, browser={'title':'chrome','path':'../../../../../../../../../../../../usr/local/bin/chromedriver'})
 
     with open('download.json') as f:
         smartview_json = json.load(f)
