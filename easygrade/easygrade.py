@@ -137,6 +137,7 @@ class EasyGradeBot(FSUBot):
                             submission['Row'], submission['Column']
                         )
                     ).click()
+                    time.sleep(1.5)
                     dropdown_btn = self.dr.find_element_by_css_selector(
                         'tr#cmlink_{}{} > img'.format(
                             submission['Row'], submission['Column']
