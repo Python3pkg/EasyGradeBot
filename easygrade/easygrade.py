@@ -27,7 +27,7 @@ class EasyGradeBot(FSUBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def main(self, course_id, smartview_names, assignment):
+    def main(self, course_id, smartview_names, columns):
         portal_tab = self.dr.current_window_handle
         self.SLEEP_TIME = 0.5
 
@@ -68,21 +68,75 @@ class EasyGradeBot(FSUBot):
                            split('\'')[0]
             smartview_ids.append(smartview_id)
 
-        # now, let's get the rows of students
-        students = []
-        student_table_rows_xpath = '//*[@id="listContainer_databody"]/tr'
-        student_rows = tree.xpath(student_table_rows_xpath)
 
         for smartview_id in smartview_ids:
+            # get and wait for page load (hopefully 3 is enough)
             self.dr.get(EasyGradeBot.SMARTVIEW_URL.format(course_id, smartview_id))
+            time.sleep(3)
+
+            # create tree to parse
             smartview_tree = html.fromstring(self.page_source)
 
-            # now, let's get the table header so we know which columns to select
-            columns = []
-            student_table_header_xpath = '//*[@id="table1_header"]/thead/tr/*'
-            student_table_header = smartview_tree.xpath(student_table_header_xpath)
-            for column in student_table_header[1:]:
-                pprint(column.getchildren()[0].getchildren()[0].text)
+            # grab header to ascertain needed column (and store indexes)
+            column_ids = {}
+            student_table_header_css_selector = '#table1_header > thead > tr > th'
+            student_table_header = smartview_tree.cssselect(
+                student_table_header_css_selector
+            )[1:]
+            for i, column in enumerate(student_table_header):
+                column_div = column.getchildren()[0].getchildren()[0].getchildren()[0]
+                if column_div.text in columns:
+                    # since we're skipping the first column
+                    column_ids[i+1] = column_div.text
+
+            # submissions will collect URLs to download the assignments
+            submissions = []
+            student_table_rows_css_selector = '#table1 > tbody > tr'
+            student_rows = smartview_tree.cssselect(
+                student_table_rows_css_selector
+            )
+
+            # now, let's get all of the items in the necessary columns
+            for row_id in range(len(student_rows)):
+                lastname, firstname = [
+                    smartview_tree.cssselect(
+                        '#cell_{}_{} > div > div.gbView > div > a'\
+                        .format(row_id, i)
+                    )[0].text for i in [1, 2]
+                ]
+
+                submission = {
+                    'Last Name': lastname,
+                    'First Name': firstname,
+                    'Anchors': []
+                }
+
+                for column_id, column_name in column_ids.items():
+                    cell = smartview_tree.cssselect(
+                        '#cell_{}_{} > div > div.gbView > div > a'\
+                        .format(row_id, column_id)
+                    )
+                    submission['Anchors'].append({
+                        'Title': column_name,
+                        'Row': row_id,
+                        'Column': column_id,
+                        'Anchor': cell
+                    })
+
+                submissions.append(submission)
+
+            for submission in submissions:
+                for anchor_list in submission['Anchors']:
+                    for anchor in anchor_list['Anchor']:
+                        print(anchor)
+                        anchor.click()
+                        attempt = self.dr.find_element_by_css_selector(
+                            '#context_menu_tag_item1_{}{}'.format(
+                                anchor['Row'], anchor['Column']
+                            )
+                        )
+                        print(attempt)
+
 
             time.sleep(5)
 
@@ -98,5 +152,5 @@ if __name__ == '__main__':
     bot.main(
         smartview_json['course_id'], # eventually switch this to course name
         ["04_Pianka", "07_Pianka", "16_Pianka", "17_Pianka"],
-        "Homework 1"
+        ["Homework 1"]
     )
