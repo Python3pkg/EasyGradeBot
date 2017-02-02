@@ -4,7 +4,10 @@ import sys
 from pprint import pprint
 from urllib.parse import parse_qs, urlparse
 
+from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.chrome.options import Options
+import selenium.webdriver.support.ui as ui
 from lxml import html
 from fsubot import FSUBot
 
@@ -30,6 +33,7 @@ class EasyGradeBot(FSUBot):
 
     def main(self, course_id, smartview_names, columns):
         portal_tab = self.dr.current_window_handle
+        wait = ui.WebDriverWait(self.dr, 10)
         self.SLEEP_TIME = 0.5
 
         with open('pages.json') as f:
@@ -137,22 +141,62 @@ class EasyGradeBot(FSUBot):
                             submission['Row'], submission['Column']
                         )
                     ).click()
-                    time.sleep(1.5)
+                    time.sleep(1)
                     dropdown_btn = self.dr.find_element_by_css_selector(
-                        'tr#cmlink_{}{} > img'.format(
+                        'a#cmlink_{}{}'.format(
                             submission['Row'], submission['Column']
                         )
                     )
                     dropdown_btn.click()
-                    #submission['Dropdown'].click()
-                    #anchor.click()
-                    #attempt = self.dr.find_element_by_css_selector(
-                    #    '#context_menu_tag_item1_{}{}'.format(
-                    #        anchor['Row'], anchor['Column']
-                    #    )
-                    #)
-                    #print(attempt)
-                    time.sleep(5)
+                    time.sleep(1)
+                    view_grade_details = [
+                        a for a in self.dr.find_elements_by_xpath(
+                            '//*[@id="context_menu_tag_item1_{}{}"]'.format(
+                                submission['Row'], submission['Column']
+                            )
+                        ) if "View Grade Details" in a.get_attribute("title")
+                    ][0]
+
+                    # entering grade details page
+                    view_grade_details.click()
+                    attempt_rows = len(self.dr.find_elements_by_xpath(
+                        '//*[@id="attemptsTable"]/tbody/tr[contains(@id,"attemptRow")]'
+                    ))
+
+                    attempt_url = "https://campus.fsu.edu/webapps/assignment/gradeAssignmentRedirector?anonymousMode=false&course_id={}&attempt_id={}"
+                    attempt_row_xpath = '//*[@id="attemptsTable"]/tbody/tr[contains(@id,"attemptRow{}")]'
+
+                    for attempt_row_num in range(attempt_rows):
+                        attempt_row = self.dr.find_element_by_xpath(
+                            attempt_row_xpath.format(attempt_row_num)
+                        )
+                        attempt_row_id = attempt_row.get_attribute("id")
+
+                        submit_date = attempt_row.find_element_by_xpath(
+                            '//*[@id="{}"]/td[1]/div'.format(attempt_row_id)
+                        ).text
+
+                        attempt_id = attempt_row.find_element_by_xpath(
+                            '//*[@id="{}"]/td[6]/div/a[1]'.format(
+                                attempt_row_id
+                            )
+                        ).get_attribute("onclick").split("'")[1].split("'")[0]
+
+                        self.dr.get(attempt_url.format(course_id, attempt_id))
+                        wait.until(lambda driver: driver.find_element_by_xpath(
+                            '//*[@id="downloadPanelButton"]'
+                        ))
+                        download_btn = self.dr.find_element_by_xpath(
+                            '//*[@id="downloadPanelButton"]'
+                        )
+                        download_btn.click()
+                        time.sleep(2)
+                        self.dr.execute_script('window.history.go(-1)')
+
+
+                    time.sleep(1)
+                    self.dr.execute_script('window.history.go(-1)')
+                    time.sleep(1)
 
 
             time.sleep(5)
@@ -163,11 +207,16 @@ class EasyGradeBot(FSUBot):
 if __name__ == '__main__':
     mbpath = '../../../../../../../../../../../../usr/local/bin/chromedriver'
     calderapath = '../drivers/chromedriver'
+
+    #profile = webdriver.ChromeOptions()
+    #prefs = {"download.default_directory" : "/home/sean/easygradeassignments"}
+    #profile.add_experimental_option("prefs", prefs)
     bot = EasyGradeBot(
         fsuid=fsuid, fsupw=fsupw,
         browser={
             'title': 'chrome',
-            'path' :calderapath
+            'path' :mbpath,
+            'profile': None
         }
     )
 
