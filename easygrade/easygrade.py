@@ -5,17 +5,12 @@ import sys
 from pprint import pprint
 from urllib.parse import parse_qs, urlparse
 
+import selenium.webdriver.support.ui as ui
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
-import selenium.webdriver.support.ui as ui
 from lxml import html
 from fsubot import FSUBot
-
-try:
-    from config import fsuid, fsupw
-except ImportError:  # no config file set
-    pass
 
 
 def get_query_field(url, field):
@@ -32,18 +27,27 @@ class EasyGradeBot(FSUBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def main(self, course_id, smartview_names, columns):
+    def main(self, course_name, smartview_names, columns):
         portal_tab = self.dr.current_window_handle
-        wait = ui.WebDriverWait(self.dr, 10)
         self.SLEEP_TIME = 0.5
 
         bot._navigate(title="BlackBoard", xpath="//*[@id=\"link_icon_197\"]")
         blackboard_tab = [h for h in self.dr.window_handles if h != portal_tab][0]
+        ta_courses_xpath = '//*[@id="_4_1termCourses_noterm"]/ul[2]/li[*]/a'
         self.dr.switch_to_window(blackboard_tab)
+        self.wait.until(lambda driver: driver.find_element_by_xpath(ta_courses_xpath))
+        # get course_id from course_name
+        for course_li in self.dr.find_elements_by_xpath(ta_courses_xpath):
+            if str(course_name) == str(course_li.text):
+                course_id = int(course_li.get_attribute("href").split('id=')[1].split('&')[0])
+                break
+        else:
+            print("Unable to locate course. Ensure it exactly matches the text under \"Courses where you are: Teaching Assistant\".")
+            sys.exit()
 
         smartview_listing_url = EasyGradeBot.SMARTVIEWS_URL.format(course_id)
         self.dr.get(smartview_listing_url)
-        wait.until(lambda driver: driver.find_element_by_xpath(
+        self.wait.until(lambda driver: driver.find_element_by_xpath(
             '//*[@id="nav"]/li/a'
         ))
 
@@ -65,7 +69,7 @@ class EasyGradeBot(FSUBot):
         for smartview_id in smartview_ids:
             # get and wait for page load (hopefully 3 is enough)
             self.dr.get(EasyGradeBot.SMARTVIEW_URL.format(course_id, smartview_id))
-            wait.until(lambda driver: driver.find_element_by_xpath(
+            self.wait.until(lambda driver: driver.find_element_by_xpath(
                 '//*[@id="cell_0_3"]/div/div[1]/div/a'
             ))
 
@@ -164,7 +168,7 @@ class EasyGradeBot(FSUBot):
                     ).get_attribute("onclick").split("'")[1].split("'")[0]
 
                     self.dr.get(attempt_url.format(course_id, attempt_id))
-                    wait.until(lambda driver: driver.find_element_by_xpath(
+                    self.wait.until(lambda driver: driver.find_element_by_xpath(
                         '//*[@id="downloadPanelButton"]'
                     ))
                     download_btn = self.dr.find_element_by_xpath(
@@ -174,7 +178,7 @@ class EasyGradeBot(FSUBot):
                     self.dr.execute_script('window.history.go(-1)')
 
                     self.dr.execute_script('window.history.go(-1)')
-                    wait.until(lambda driver: driver.find_element_by_css_selector(
+                    self.wait.until(lambda driver: driver.find_element_by_css_selector(
                         'td#cell_{}_{}'.format(
                             submission['Row'], submission['Column']
                         )
@@ -185,9 +189,6 @@ class EasyGradeBot(FSUBot):
 
 
 if __name__ == '__main__':
-    mbpath = '../../../../../../../../../../../../usr/local/bin/chromedriver'
-    calderapath = '../drivers/chromedriver'
-
     chrome_options = webdriver.ChromeOptions()
     download_dir = os.path.join(os.path.expanduser("~"), "Downloads/assignments")
     prefs = {"download.default_directory" : download_dir}
@@ -197,13 +198,21 @@ if __name__ == '__main__':
         chrome_options=chrome_options
     )
 
+    try:
+        from config import fsuid, fsupw
+    except ImportError:  # no config file set
+        fsuid, fsupw = '', ''
+
     bot = EasyGradeBot(
         fsuid=fsuid, fsupw=fsupw,
         driver=driver,
     )
 
+    with open('download.json') as f:
+        d_json = json.load(f)
+
     bot.main(
-        '_6430453_1', # eventually switch this to course name
-        ["04_Pianka", "07_Pianka", "16_Pianka", "17_Pianka"],
-        ["Homework 1"]
+        d_json['course_name'], # eventually switch this to course name
+        d_json['smartview_names'],
+        d_json['column_names']
     )

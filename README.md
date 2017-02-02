@@ -11,7 +11,7 @@ A bot designed to interact with BlackBoard, aidding in downloading large numbers
 
     `$ cd EasyGradeBot && pip install -r requirements.txt`
 
-3. Open `download.json` and enter in the IDs for your SmartViews.
+3. Open `download.json` and enter in the names for your SmartViews, the name of the columns to download, and the FSU course ID.
 
     These IDs are accessible through the page source on the `Manage > Smart Views` page.
 
@@ -24,7 +24,8 @@ A bot designed to interact with BlackBoard, aidding in downloading large numbers
 #### Requirements:
 ```
 appdirs==1.4.0
-fsubot==0.2.6
+cssselect==1.0.1
+fsubot==0.2.8
 lxml==3.7.2
 packaging==16.8
 pyparsing==2.1.10

@@ -1,9 +1,12 @@
 {
-    "course_id": "_6430453_1",
-    "smartview_ids": [
-        "690492",
-        "690493",
-        "690490",
-        "690489"
+    "course_name": "COP3014 Spring 2017",
+    "smartview_names": [
+        "04_Pianka", 
+        "07_Pianka", 
+        "16_Pianka", 
+        "17_Pianka"
+    ],
+    "column_names": [
+        "Homework 1"
     ]
 }
