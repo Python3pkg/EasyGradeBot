@@ -4,6 +4,7 @@ import sys
 from pprint import pprint
 from urllib.parse import parse_qs, urlparse
 
+from selenium.webdriver.common.action_chains import ActionChains
 from lxml import html
 from fsubot import FSUBot
 
@@ -90,7 +91,7 @@ class EasyGradeBot(FSUBot):
                     column_ids[i+1] = column_div.text
 
             # submissions will collect URLs to download the assignments
-            submissions = []
+            students = []
             student_table_rows_css_selector = '#table1 > tbody > tr'
             student_rows = smartview_tree.cssselect(
                 student_table_rows_css_selector
@@ -105,37 +106,52 @@ class EasyGradeBot(FSUBot):
                     )[0].text for i in [1, 2]
                 ]
 
-                submission = {
+                student = {
                     'Last Name': lastname,
                     'First Name': firstname,
-                    'Anchors': []
+                    'Submissions': [
+
+                    ]
                 }
 
                 for column_id, column_name in column_ids.items():
-                    cell = smartview_tree.cssselect(
-                        '#cell_{}_{} > div > div.gbView > div > a'\
-                        .format(row_id, column_id)
+                    dropdown_btn = self.dr.find_element_by_id(
+                        'cmlink_{}{}'.format(row_id, column_id)
                     )
-                    submission['Anchors'].append({
+                    student['Submissions'].append({
                         'Title': column_name,
                         'Row': row_id,
                         'Column': column_id,
-                        'Anchor': cell
+                        'Dropdown': dropdown_btn
                     })
 
-                submissions.append(submission)
+                students.append(student)
 
-            for submission in submissions:
-                for anchor_list in submission['Anchors']:
-                    for anchor in anchor_list['Anchor']:
-                        print(anchor)
-                        anchor.click()
-                        attempt = self.dr.find_element_by_css_selector(
-                            '#context_menu_tag_item1_{}{}'.format(
-                                anchor['Row'], anchor['Column']
-                            )
+
+            cell_id = "cell_{}_{}"
+
+            for student in students:
+                for submission in student['Submissions']:
+                    cell = self.dr.find_element_by_css_selector(
+                        'td#cell_{}_{}'.format(
+                            submission['Row'], submission['Column']
                         )
-                        print(attempt)
+                    ).click()
+                    dropdown_btn = self.dr.find_element_by_css_selector(
+                        'tr#cmlink_{}{} > img'.format(
+                            submission['Row'], submission['Column']
+                        )
+                    )
+                    dropdown_btn.click()
+                    #submission['Dropdown'].click()
+                    #anchor.click()
+                    #attempt = self.dr.find_element_by_css_selector(
+                    #    '#context_menu_tag_item1_{}{}'.format(
+                    #        anchor['Row'], anchor['Column']
+                    #    )
+                    #)
+                    #print(attempt)
+                    time.sleep(5)
 
 
             time.sleep(5)
@@ -144,7 +160,15 @@ class EasyGradeBot(FSUBot):
 
 
 if __name__ == '__main__':
-    bot = EasyGradeBot(fsuid=fsuid, fsupw=fsupw, browser={'title':'chrome','path':'../../../../../../../../../../../../usr/local/bin/chromedriver'})
+    mbpath = '../../../../../../../../../../../../usr/local/bin/chromedriver'
+    calderapath = '../drivers/chromedriver'
+    bot = EasyGradeBot(
+        fsuid=fsuid, fsupw=fsupw,
+        browser={
+            'title': 'chrome',
+            'path' :calderapath
+        }
+    )
 
     with open('download.json') as f:
         smartview_json = json.load(f)
