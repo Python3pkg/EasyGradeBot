@@ -7,9 +7,12 @@ A bot designed to interact with BlackBoard, aidding in downloading large numbers
 
     `$ git clone https://github.com/seanpianka/easygradebot.git`
 
-2. Install the requirements.
+2. Install the Python requirements.
 
     `$ cd EasyGradeBot && pip install -r requirements.txt`
+
+3. Install a driver.
+
 
 3. Open `download.json` and enter in the names for your SmartViews, the name of the columns to download, and the FSU course name (exactly as it appears on the main BlackBoard page on the right-side column).
 
