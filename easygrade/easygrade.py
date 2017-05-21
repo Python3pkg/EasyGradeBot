@@ -73,15 +73,15 @@ class EasyGradeBot(FSUBot):
         while(1):
             print("Which Smart View Assignments would you like to download?")
             for i, smartview in enumerate(smartviews):
-                print("{}. \"{}\"".format(i+1, smartview[1]))
+                print(("{}. \"{}\"".format(i+1, smartview[1])))
 
             try:
-                choice_num = int(input("--> "))
+                choice_num = int(eval(input("--> ")))
                 if choice_num == 0:
                     print("Exiting.")
                     self.dr.close()
                     sys.exit()
-                elif choice_num not in range(1, len(smartviews) + 1): continue
+                elif choice_num not in list(range(1, len(smartviews) + 1)): continue
             except (ValueError, TypeError):
                 continue
 
@@ -90,7 +90,7 @@ class EasyGradeBot(FSUBot):
                 print("==========================================")
                 self.download_smartview(smartview_id, smartviews[choice_num - 1][1], columns)
             except (KeyboardInterrupt, WebDriverException) as e:
-                print("{}: exiting that Smart View.".format(str(e)))
+                print(("{}: exiting that Smart View.".format(str(e))))
             finally:
                 print("\n==========================================")
 
@@ -145,7 +145,7 @@ class EasyGradeBot(FSUBot):
                 'Submissions': []
             }
 
-            for column_id, column_name in column_ids.items():
+            for column_id, column_name in list(column_ids.items()):
                 student['Submissions'].append({
                     'Title': column_name,
                     'Filename': None,
@@ -161,7 +161,7 @@ class EasyGradeBot(FSUBot):
 
         cell_id = "cell_{}_{}"
         for i, student in enumerate(students):
-            print("{} {}".format(student['First Name'], student['Last Name']))
+            print(("{} {}".format(student['First Name'], student['Last Name'])))
             for j, submission in enumerate(student['Submissions']):
                 cell = self.dr.find_element_by_css_selector(
                     'td#cell_{}_{}'.format(
@@ -253,11 +253,11 @@ class EasyGradeBot(FSUBot):
                     student['Submissions'][j]['Downloaded'] = True
                     time.sleep(1.2)
                 except (WebDriverException, ElementNotVisibleException, ElementNotVisibleException) as e:
-                    print("{}: Bailing on submission at ({}, {}) by {}.".format(
+                    print(("{}: Bailing on submission at ({}, {}) by {}.".format(
                         str(e), submission['Row'], submission['Column'],
                         ' '.join([student['First Name'], student['Last Name']])
                         )
-                    )
+                    ))
 
                     self.dr.execute_script('window.history.go(-1)')
                     self.dr.execute_script('window.history.go(-1)')
@@ -312,7 +312,7 @@ class EasyGradeBot(FSUBot):
                               "extension, what would you like to do?\n"
                               "1. Skip\n2. Download")
                         try:
-                            choice = int(input('--> '))
+                            choice = int(eval(input('--> ')))
                             if choice not in [1, 2]:
                                 raise ValueError
                         except ValueError:
@@ -332,9 +332,9 @@ class EasyGradeBot(FSUBot):
         filename = os.path.split(fname)[1]
         if add_on:
             filename = ''.join(['_'.join([os.path.splitext(filename)[0], add_on]), os.path.splitext(filename)[1]])
-        print("Moving \"{}\"...".format(filename))
+        print(("Moving \"{}\"...".format(filename)))
         new_file = os.path.join(download_dir, subfolder, filename)
-        print(download_dir, subfolder, filename)
+        print((download_dir, subfolder, filename))
         print(new_file)
         # make sure it exists
         EasyGradeBot._create_dir(os.path.join(download_dir, subfolder))
@@ -370,7 +370,7 @@ class EasyGradeBot(FSUBot):
             return dir_name
         except OSError as e:
             if e.errno != errno.EEXIST:
-                print(str(e))
+                print((str(e)))
                 raise OSError('Unable to create directory.')
 
 
